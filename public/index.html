@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        <input type="text" id="append"></div>
+        <script>
+            (async () => {
+                const response = await fetch('wasm_emoji.wasm')
+                const buffer = await response.arrayBuffer()
+                const { instance } = await WebAssembly.instantiate(buffer)
+                console.log(instance.exports)
+
+                const memory = instance.exports.memory
+                const pointer = instance.exports.get_emoji('grin')
+                const strBuffer = new Uint8Array(memory.buffer, pointer, 15)
+                const str = new TextDecoder().decode(strBuffer)
+                console.log(str)
+
+                const div = document.getElementById('append')
+                append.value = String.fromCodePoint(`0x${str}`)
+            })();
+        </script>
+    </body>
+</html>
