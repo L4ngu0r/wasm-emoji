@@ -1,28 +1,26 @@
-use std::ffi::CString;
-use std::os::raw::c_char;
+#[macro_use]
+extern crate lazy_static;
+
 use std::collections::BTreeMap;
+use wasm_bindgen::prelude::*;
 
-const GRINNING_FACE: &'static str = "1F600";
-const GRINNING_FACE_WITH_BIG_EYES: &'static str = "1F603";
-const GRINNING_FACE_WITH_SMILING_EYES: &'static str = "1F604";
-const BEAMING_FACE_WITH_SMILING_EYES: &'static str = "1F601";
-const GRINNING_SQUINTING_FACE: &'static str = "1F606";
-const GRINNING_FACE_WITH_SWEAT: &'static str = "1F605";
+// TODO generate once & for all (cf emojis.js)
+lazy_static! {
+    static ref EMOJIS: BTreeMap<&'static str, &'static str> = {
+        let mut map = BTreeMap::new();
+        map.insert("grinning_face", "1F600");
+        map.insert("grinning_face_with_big_eyes", "1F603");
+        map.insert("grinning_face_with_smiling_eyes", "1F604");
+        map
+    };
+}
 
-#[no_mangle]
-pub fn get_emoji(emoji_name: &str) -> *mut c_char {
-
-    let mut map: BTreeMap<&'static str, &'static str> = BTreeMap::new();
-
-    map.insert("GRINNING_FACE", "1F600");
-    map.insert("GRINNING_FACE_WITH_BIG_EYES", "1F603");
-    map.insert("GRINNING_FACE_WITH_SMILING_EYES", "1F604");
-
+#[wasm_bindgen]
+pub fn search_emoji(name: &str) -> JsValue {
     let mut results: Vec<&'static str> = Vec::new();
-    for (_k, v) in map.range(emoji_name..) {
+    for (_, v) in EMOJIS.range(name.to_lowercase().as_str()..) {
         results.push(v);
     }
 
-    let s = CString::new(results.join("-")).unwrap();
-    s.into_raw()
+    JsValue::from_serde(&results).unwrap()
 }
