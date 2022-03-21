@@ -1,4 +1,6 @@
 const fs = require('fs/promises');
+const fs_simple = require('fs');
+const path = require('path');
 
 const emojisList = async () => {
   return await fs.readFile('emoji-test.txt', 'utf-8');
@@ -39,7 +41,6 @@ const map = {};
   }
 
   Object.entries(map).forEach(([key, value]) => {
-    console.log('<>>>>>>>>>>>>>>>', key);
     const subgroups = value.subgroups;
     const groupStart = value.start;
     for(let j = 0; j < subgroups.length; j++) {
@@ -64,6 +65,27 @@ const map = {};
       delete map[key].subgroups;
     }
   });
+  
+  const filePath = path.join(__dirname, 'src/emojis.rs');
+  const writableStream = fs_simple.createWriteStream(filePath);
+  writableStream.on('error', (error) => console.error(error));
+  writableStream.on('finish', () => console.log(`File created to ${filePath}`))
+  
+  writableStream.write(`use std::collections::BTreeMap;
 
-  console.log(map)
+pub fn get_map() -> BTreeMap<&'static str, &'static str> {
+  let mut map = BTreeMap::new();
+`);
+
+  Object.values(map).forEach(value => {
+    value.emojis.forEach(emoji => {
+      if (emoji.emojiName !== '' && emoji.emojiName !== "EOF" && !emoji.emojiName.includes("_subgroup")) {
+        writableStream.write(`  map.insert("${emoji.emojiName}", "${emoji.emojiCode}");\n`);
+      }
+    });
+  });
+  writableStream.write('  map\n');
+  writableStream.write('}');
+  writableStream.end();
+
 })();
